@@ -1,4 +1,4 @@
-name: Backend API Tests (Newman)
+name: Backend CI/CD Pipeline
 
 on:
   push:
@@ -9,9 +9,9 @@ on:
   pull_request:
 
 jobs:
+  # --- JOB 1: TEST ---
   backend-tests:
     runs-on: ubuntu-latest
-
     steps:
       # Checkout source
       - name: Checkout repository
@@ -51,13 +51,51 @@ jobs:
       # Upload Test Report
       - name: Upload HTML Report
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: newman-report
           path: reports/report.html
 
-      # Upload backend server log (useful when something fails)
+      # Upload backend server log
       - name: Upload backend log
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: backend-log
           path: backend/server.log
+
+  # --- JOB 2: DEPLOY (Chỉ chạy khi Test PASS) ---
+  deploy:
+    needs: backend-tests                # Bắt buộc job test phải OK mới chạy job này
+    if: github.ref == 'refs/heads/main' # Chỉ deploy khi push vào nhánh main (tránh deploy bản dev/feature)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to Linux Server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}     # Dùng Key (.pem) thay vì password
+          port: ${{ secrets.PORT }}
+          script: |
+            # 1. Vào thư mục code trên server (Sửa đường dẫn này nếu bạn clone chỗ khác)
+            cd /root/my-app
+
+            # 2. Lấy code mới nhất về (v2)
+            git pull origin main
+
+            # 3. Vào thư mục backend và build Docker Image v2
+            cd backend
+            docker build -t backend-app:v2 .
+
+            # 4. Xử lý container cũ (Stop & Remove nếu đang chạy)
+            # "|| true" giúp lệnh không bị lỗi nếu container chưa tồn tại
+            docker stop backend-container || true
+            docker rm backend-container || true
+
+            # 5. Chạy container mới (v2)
+            docker run -d -p 3000:3000 --name backend-container backend-app:v2
+            
+            # 6. Dọn dẹp các image cũ không dùng đến để tiết kiệm ổ cứng
+            docker image prune -f
