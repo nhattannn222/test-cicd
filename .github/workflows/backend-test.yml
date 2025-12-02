@@ -87,7 +87,7 @@ jobs:
 
             # 3. Vào thư mục backend và build Docker Image v2
             cd backend
-            docker build -t backend-app:v2 .
+            docker build -t backend-app:v3 .
 
             # 4. Xử lý container cũ (Stop & Remove nếu đang chạy)
             # "|| true" giúp lệnh không bị lỗi nếu container chưa tồn tại
@@ -95,7 +95,7 @@ jobs:
             docker rm backend-container || true
 
             # 5. Chạy container mới (v2)
-            docker run -d -p 3000:3000 --name backend-container backend-app:v2
+            docker run -d -p 3000:3000 --name backend-container backend-app:v3
             
             # 6. Dọn dẹp các image cũ không dùng đến để tiết kiệm ổ cứng
             docker image prune -f

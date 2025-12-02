@@ -8,6 +8,6 @@ app.use('/api', routes);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  // Thay đổi log để nhận biết v2
-  console.log(`Backend v2 running on port ${port}`);
+  // Đổi thành v3 để lát check log cho sướng
+  console.log(`Backend v3 running on port ${port}`);
 });
