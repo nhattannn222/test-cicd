@@ -80,7 +80,7 @@ jobs:
           port: ${{ secrets.PORT }}
           script: |
             # 1. Vào thư mục code trên server (Sửa đường dẫn này nếu bạn clone chỗ khác)
-            cd /root/my-app
+            cd /home/ec2-user/test-cicd
 
             # 2. Lấy code mới nhất về (v2)
             git pull origin main
