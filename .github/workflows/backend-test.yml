@@ -9,46 +9,39 @@ on:
   pull_request:
 
 jobs:
-  # --- JOB 1: TEST ---
+  # --- JOB 1: TEST (Vẫn chạy trên Cloud Github cho nhanh) ---
   backend-tests:
     runs-on: ubuntu-latest
     steps:
-      # Checkout source
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # Install backend dependencies
       - name: Install backend dependencies
         working-directory: backend
         run: npm install
 
-      # Start backend server in background
       - name: Start backend server
         working-directory: backend
         run: |
           nohup npm start > server.log 2>&1 &
           sleep 3
 
-      # Install Newman
       - name: Install Newman
         run: |
           npm install -g newman
           npm install -g newman-reporter-htmlextra
 
-      # Run Postman tests
       - name: Run Postman API tests
         run: |
           newman run postman/simple-backend.postman_collection.json \
             -r cli,htmlextra \
             --reporter-htmlextra-export reports/report.html
 
-      # Upload Test Report
       - name: Upload HTML Report
         uses: actions/upload-artifact@v4
         if: always()
@@ -56,7 +49,6 @@ jobs:
           name: newman-report
           path: reports/report.html
 
-      # Upload backend server log
       - name: Upload backend log
         uses: actions/upload-artifact@v4
         if: always()
@@ -64,38 +56,39 @@ jobs:
           name: backend-log
           path: backend/server.log
 
-  # --- JOB 2: DEPLOY (Chỉ chạy khi Test PASS) ---
+  # --- JOB 2: DEPLOY (Chạy trực tiếp trên Server của bạn) ---
   deploy:
-    needs: backend-tests                # Bắt buộc job test phải OK mới chạy job này
-    if: github.ref == 'refs/heads/main' # Chỉ deploy khi push vào nhánh main (tránh deploy bản dev/feature)
-    runs-on: ubuntu-latest
+    needs: backend-tests
+    if: github.ref == 'refs/heads/main'
+    
+    # QUAN TRỌNG: Chuyển sang dùng Runner "của nhà trồng được"
+    runs-on: self-hosted
     
     steps:
-      - name: Deploy to Linux Server via SSH
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}     # Dùng Key (.pem) thay vì password
-          port: ${{ secrets.PORT }}
-          script: |
-            # 1. Vào thư mục code trên server (Sửa đường dẫn này nếu bạn clone chỗ khác)
-            cd /home/ec2-user/test-cicd
+      # Bước này Runner tự động tải code về thư mục làm việc của nó
+      - name: Checkout Code Locally
+        uses: actions/checkout@v4
 
-            # 2. Lấy code mới nhất về (v2)
-            git pull origin main
+      - name: Build and Deploy v3
+        run: |
+          # Di chuyển vào thư mục backend (tương đối so với thư mục gốc repo)
+          cd backend
+          
+          # Build Image v3 (Dùng sudo vì ec2-user cần quyền admin để gọi Docker)
+          sudo docker build -t backend-app:v3 .
 
-            # 3. Vào thư mục backend và build Docker Image v2
-            cd backend
-            docker build -t backend-app:v3 .
+          # Cài psmisc nếu server chưa có (để dùng lệnh fuser)
+          sudo yum install psmisc -y || true
 
-            # 4. Xử lý container cũ (Stop & Remove nếu đang chạy)
-            # "|| true" giúp lệnh không bị lỗi nếu container chưa tồn tại
-            docker stop backend-container || true
-            docker rm backend-container || true
+          # Kill process đang chiếm port 3000 (đảm bảo port sạch sẽ)
+          sudo fuser -k 3000/tcp || true 
+          
+          # Stop & Xóa container cũ
+          sudo docker stop backend-container || true
+          sudo docker rm backend-container || true
 
-            # 5. Chạy container mới (v2)
-            docker run -d -p 3000:3000 --name backend-container backend-app:v3
-            
-            # 6. Dọn dẹp các image cũ không dùng đến để tiết kiệm ổ cứng
-            docker image prune -f
+          # Chạy container mới
+          sudo docker run -d -p 3000:3000 --name backend-container backend-app:v3
+          
+          # Dọn dẹp image rác
+          sudo docker image prune -f
