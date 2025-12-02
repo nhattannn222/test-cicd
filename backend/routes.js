@@ -16,6 +16,11 @@ router.post('/multiply', (req, res) => {
   res.json({ result: a * b });
 });
 
+router.post('/minus', (req, res) => {
+  const { a, b } = req.body;
+  res.json({ result: a - b });
+});
+
 router.get('/user/:id', (req, res) => {
     const idParam = req.params.id;
     const id = parseInt(idParam);
