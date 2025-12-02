@@ -1,46 +1,63 @@
-name: Backend Tests
+name: Backend API Tests (Newman)
 
 on:
   push:
-    branches: ["main"]
     paths:
       - "backend/**"
       - "postman/**"
+      - ".github/workflows/backend-test.yml"
   pull_request:
-    paths:
-      - "backend/**"
-      - "postman/**"
 
 jobs:
-  test-backend:
+  backend-tests:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout source
-      uses: actions/checkout@v3
+      # Checkout source
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup Node
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18
+      # Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
-    - name: Install backend dependencies
-      run: |
-        cd backend
-        npm install
+      # Install backend dependencies
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
 
-    - name: Start backend server in background
-      run: |
-        cd backend
-        nohup npm start &
+      # Start backend server in background
+      - name: Start backend server
+        working-directory: backend
+        run: |
+          nohup npm start > server.log 2>&1 &
+          sleep 3
 
-    - name: Wait for server to start
-      run: |
-        sleep 3
+      # Install Newman
+      - name: Install Newman
+        run: |
+          npm install -g newman
+          npm install -g newman-reporter-htmlextra
 
-    - name: Install Newman
-      run: npm install -g newman
+      # Run Postman tests
+      - name: Run Postman API tests
+        run: |
+          newman run postman/simple-backend.postman_collection.json \
+            -r cli,htmlextra \
+            --reporter-htmlextra-export reports/report.html
 
-    - name: Run Postman tests
-      run: |
-        newman run postman/simple-backend.postman_collection.json
+      # Upload Test Report
+      - name: Upload HTML Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-report
+          path: reports/report.html
+
+      # Upload backend server log (useful when something fails)
+      - name: Upload backend log
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log
+          path: backend/server.log

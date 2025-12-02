@@ -24,6 +24,58 @@
         "url": "http://localhost:3000/api/sum"
       },
       "response": []
+    },
+    {
+      "name": "Get User - Valid ID",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/user/5"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "pm.test('User id = 5', () => pm.expect(pm.response.json().id).to.eql(5));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get User - Invalid ID",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/user/abc"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 400 for invalid ID', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get User - Not Found",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/user/0"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 404 when not found', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
     }
   ]
 }
