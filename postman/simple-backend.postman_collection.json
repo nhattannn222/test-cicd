@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Simple Backend Tests",
+    "name": "Simple Backend Tests (Intentional Fail)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -10,12 +10,25 @@
         "method": "GET",
         "url": "http://localhost:3000/api/hello"
       },
-      "response": []
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Test này vẫn đúng",
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
     },
     {
-      "name": "POST Sum",
+      "name": "POST Sum (GÂY LỖI)",
       "request": {
         "method": "POST",
+        "header": [],
         "body": {
           "mode": "raw",
           "raw": "{ \"a\": 5, \"b\": 7 }",
@@ -23,163 +36,48 @@
         },
         "url": "http://localhost:3000/api/sum"
       },
-      "response": []
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Thực tế: 5 + 7 = 12",
+              "// Test sai: Mong đợi là 100",
+              "pm.test('Sum calculation check', () => pm.expect(pm.response.json().result).to.eql(100));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "POST Multiply (GÂY LỖI)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"a\": 10, \"b\": 3 }",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "http://localhost:3000/api/multiply"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+               "// Thực tế: 10 * 3 = 30",
+               "// Test sai: Mong đợi là 9999",
+              "pm.test('Multiply calculation check', () => pm.expect(pm.response.json().result).to.eql(9999));"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "Get User - Valid ID",
-      "request": {
-        "method": "GET",
-        "url": "http://localhost:3000/api/user/5"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-              "pm.test('User id = 5', () => pm.expect(pm.response.json().id).to.eql(5));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Get User - Invalid ID",
-      "request": {
-        "method": "GET",
-        "url": "http://localhost:3000/api/user/abc"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status 400 for invalid ID', () => pm.response.to.have.status(400));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Get User - Not Found",
-      "request": {
-        "method": "GET",
-        "url": "http://localhost:3000/api/user/0"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status 404 when not found', () => pm.response.to.have.status(404));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "info": {
-        "name": "Simple Backend Tests v3",
-        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-      },
-      "item": [
-        {
-          "name": "GET Hello",
-          "request": {
-            "method": "GET",
-            "url": "http://localhost:3000/api/hello"
-          },
-          "response": []
-        },
-        {
-          "name": "POST Sum",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{ \"a\": 5, \"b\": 7 }",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": "http://localhost:3000/api/sum"
-          },
-          "response": []
-        },
-        {
-          "name": "POST Multiply (New v3)",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{ \"a\": 10, \"b\": 3 }",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": "http://localhost:3000/api/multiply"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Result should be 30', () => pm.expect(pm.response.json().result).to.eql(30));"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get User - Valid ID",
-          "request": {
-            "method": "GET",
-            "url": "http://localhost:3000/api/user/5"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get User - Invalid ID",
-          "request": {
-            "method": "GET",
-            "url": "http://localhost:3000/api/user/abc"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 400', () => pm.response.to.have.status(400));"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Get User - Not Found",
-          "request": {
-            "method": "GET",
-            "url": "http://localhost:3000/api/user/0"
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 404', () => pm.response.to.have.status(404));"
-                ]
-              }
-            }
-          ]
-        }
-      ]
+      "request": { "method": "GET", "url": "http://localhost:3000/api/user/5" },
+      "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 200', () => pm.response.to.have.status(200));" ] } } ]
     }
   ]
 }
