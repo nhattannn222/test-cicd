@@ -1,0 +1,29 @@
+{
+  "info": {
+    "name": "Simple Backend Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET Hello",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/hello"
+      },
+      "response": []
+    },
+    {
+      "name": "POST Sum",
+      "request": {
+        "method": "POST",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"a\": 5, \"b\": 7 }",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "http://localhost:3000/api/sum"
+      },
+      "response": []
+    }
+  ]
+}

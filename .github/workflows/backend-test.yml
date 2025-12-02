@@ -1,0 +1,46 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "backend/**"
+      - "postman/**"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "postman/**"
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v3
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        npm install
+
+    - name: Start backend server in background
+      run: |
+        cd backend
+        nohup npm start &
+
+    - name: Wait for server to start
+      run: |
+        sleep 3
+
+    - name: Install Newman
+      run: npm install -g newman
+
+    - name: Run Postman tests
+      run: |
+        newman run postman/simple-backend.postman_collection.json
