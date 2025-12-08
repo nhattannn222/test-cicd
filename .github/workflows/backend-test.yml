@@ -42,7 +42,7 @@ jobs:
       - name: Run Postman API tests with CSV
         run: |
           newman run postman/simple-backend.postman_collection.json \
-            -d login_full_test.csv \
+            -d postman/login_full_test.csv \
             -r cli,htmlextra \
             --reporter-htmlextra-export reports/report.html
 
