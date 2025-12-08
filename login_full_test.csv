@@ -1,0 +1,23 @@
+username,password,expected_code,description
+datuan,datuan,200,1. Dang nhap dung (Happy Path)
+sai_user,sai_pass,401,2. Sai ca tai khoan va mat khau
+nqdkhang,mat_khau_sai,401,3. Dung tai khoan - Sai mat khau
+tai_khoan_sai,datuan,401,4. Sai tai khoan - Dung mat khau
+,,400,5. Bo trong ca hai
+nqdkhang,,400,6. Bo trong mat khau
+,datuan,400,7. Bo trong tai khoan
+   ,datuan,400,8. Tai khoan chua khoang trang (Space)
+nqdkhang,    ,400,9. Mat khau chua khoang trang (Space)
+admin' --,123456,401,10. SQL Injection - Bypass auth
+admin' OR '1'='1,pass,401,11. SQL Injection - Tautology
+"admin"" OR ""1""=""1",pass,400,12. SQL Injection - Double Quotes
+admin; DROP TABLE users,123456,401,13. SQL Injection - Xoa bang (Test ORM)
+<script>alert(1)</script>,password,401,14. XSS Injection - Script tag
+<b>dam</b>,password,401,15. HTML Injection - The HTML
+user!@#$%^&*(),password,401,16. Tai khoan chua ky tu dac biet
+nqdkhang,pass!@#$%^&*(),401,17. Mat khau chua ky tu dac biet (Neu pass that khong co)
+user_rat_dai_hon_255_ky_tu_xem_co_bi_tran_bo_nho_khong_user_rat_dai_hon_255_ky_tu_xem_co_bi_tran_bo_nho_khong_user_rat_dai_hon_255_ky_tu_xem_co_bi_tran_bo_nho_khong,password,401,18. Boundary - Tai khoan qua dai
+nqdkhang,pass_rat_dai_hon_255_ky_tu_xem_co_bi_tran_bo_nho_khong_pass_rat_dai_hon_255_ky_tu_xem_co_bi_tran_bo_nho_khong,401,19. Boundary - Mat khau qua dai
+u,password,401,20. Boundary - Tai khoan qua ngan (1 ky tu)
+nqdkhang,p,401,21. Boundary - Mat khau qua ngan (1 ky tu)
+admin,admin,401,22. Test tai khoan mac dinh (Admin/Admin)

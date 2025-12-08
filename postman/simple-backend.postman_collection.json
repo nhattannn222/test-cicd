@@ -1,60 +1,79 @@
 {
   "info": {
-    "name": "Simple Backend Tests v4",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "_postman_id": "6d23e9a1-c391-4467-a28a-2790a66cae46",
+    "name": "Login Testing (Localhost 3000)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "30989843"
   },
   "item": [
     {
-      "name": "GET Hello",
-      "request": { "method": "GET", "url": "http://localhost:3000/api/hello" },
-      "response": []
-    },
-    {
-      "name": "POST Sum",
+      "name": "Login Test",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// 1. Lấy dữ liệu từ file CSV",
+              "var expected = pm.iterationData.get(\"expected_code\");",
+              "var description = pm.iterationData.get(\"description\");",
+              "",
+              "// 2. In ra Console để debug",
+              "console.log(\"Running Case: \" + description + \" | Expecting: \" + expected);",
+              "",
+              "// 3. Kiểm tra status code",
+              "pm.test(\"[\" + description + \"] - Status code phải là \" + expected, function () {",
+              "    pm.response.to.have.status(Number(expected));",
+              "});",
+              "",
+              "// 4. Kiểm tra token nếu là 200",
+              "if (Number(expected) === 200) {",
+              "    pm.test(\"Login Success - Phải có access_token\", function () {",
+              "        var jsonData = pm.response.json();",
+              "        pm.expect(jsonData.data).to.have.property(\"access_token\");",
+              "        pm.expect(jsonData.data.access_token).to.not.be.empty;",
+              "    });",
+              "}",
+              "",
+              "// 5. Test hiệu năng",
+              "pm.test(\"Hiệu năng - Phản hồi dưới 2000ms\", function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
         "body": {
           "mode": "raw",
-          "raw": "{ \"a\": 5, \"b\": 7 }",
-          "options": { "raw": { "language": "json" } }
+          "raw": "{\n    \"username\": \"{{username}}\",\n    \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
         },
-        "url": "http://localhost:3000/api/sum"
+        "url": {
+          "raw": "http://localhost:3000/api/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "login"
+          ]
+        }
       },
       "response": []
-    },
-    {
-      "name": "POST Multiply",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \"a\": 10, \"b\": 3 }",
-          "options": { "raw": { "language": "json" } }
-        },
-        "url": "http://localhost:3000/api/multiply"
-      },
-      "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Result 30', () => pm.expect(pm.response.json().result).to.eql(30));" ] } } ]
-    },
-    {
-      "name": "POST Minus (New v4)",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \"a\": 10, \"b\": 4 }",
-          "options": { "raw": { "language": "json" } }
-        },
-        "url": "http://localhost:3000/api/minus"
-      },
-      "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Result 6', () => pm.expect(pm.response.json().result).to.eql(6));" ] } } ]
-    },
-    {
-      "name": "Get User - Valid ID",
-      "request": { "method": "GET", "url": "http://localhost:3000/api/user/5" },
-      "event": [ { "listen": "test", "script": { "exec": [ "pm.test('Status is 200', () => pm.response.to.have.status(200));" ] } } ]
     }
   ]
 }
