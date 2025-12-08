@@ -56,60 +56,20 @@ jobs:
           name: backend-log
           path: backend/server.log
 
-  # --- JOB 2: DEPLOY (Chạy trên EC2 - CÓ DUYỆT THỦ CÔNG) ---
   deploy:
     needs: backend-tests
     if: github.ref == 'refs/heads/main'
-    runs-on: self-hosted # Runner chạy trên EC2 của bạn
-
-    # === CẤU HÌNH DELIVERY (CHỜ DUYỆT) ===
+    runs-on: self-hosted
     environment: 
       name: Production
-      url: http://13.212.186.166:3000  # <--- Thay IP Public EC2 của bạn vào đây
-    # ======================================
+      url: http://13.212.186.166:3000
 
     steps:
-      - name: Checkout Code Locally
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Deploy to Docker
-        # Dùng biến môi trường để lấy mã Hash của commit làm Tag ảnh
-        env:
-          IMAGE_TAG: ${{ github.sha }}
-          CONTAINER_NAME: backend-container
+      - name: Execute Server Script
+        # GỌI FILE SCRIPT TRÊN SERVER VÀ TRUYỀN THAM SỐ
+        # github.workspace: Là đường dẫn thư mục code mà Runner vừa tải về
         run: |
-          echo "Bắt đầu deploy phiên bản: $IMAGE_TAG"
-          
-          # 1. Vào thư mục backend
-          cd backend
-
-          # 2. Build Image với tag động
-          docker build -t backend-app:$IMAGE_TAG .
-
-          # 3. Kiểm tra container cũ: Nếu đang chạy thì Stop & Xóa
-          if [ "$(docker ps -q -f name=$CONTAINER_NAME)" ]; then
-              echo "Container đang chạy -> Stop & Remove."
-              docker stop $CONTAINER_NAME
-              docker rm $CONTAINER_NAME
-          
-          # Kiểm tra container cũ: Nếu đã Stop (exited) nhưng chưa xóa thì Xóa
-          elif [ "$(docker ps -aq -f status=exited -f name=$CONTAINER_NAME)" ]; then
-              echo "Container đã stop -> Remove."
-              docker rm $CONTAINER_NAME
-          fi
-
-          # 4. Chạy Container mới
-          # --restart unless-stopped: Tự động chạy lại nếu EC2 bị khởi động lại
-          docker run -d \
-            -p 3000:3000 \
-            --name $CONTAINER_NAME \
-            --restart unless-stopped \
-            backend-app:$IMAGE_TAG
-
-          echo "Deploy thành công!"
-
-      - name: Cleanup Disk Space
-        if: always()
-        run: |
-          # Xóa các image rác (dangling) để không bị đầy ổ cứng EC2
-          docker image prune -f
+          ~/my-deploy-script.sh "${{ github.sha }}" "${{ github.workspace }}"
