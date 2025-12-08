@@ -9,9 +9,9 @@ on:
   pull_request:
 
 jobs:
-  # --- JOB 1: TEST (Chạy trên Cloud Github) ---
   backend-tests:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,9 +36,13 @@ jobs:
           npm install -g newman
           npm install -g newman-reporter-htmlextra
 
-      - name: Run Postman API tests
+      - name: Create reports folder
+        run: mkdir -p reports
+
+      - name: Run Postman API tests with CSV
         run: |
           newman run postman/simple-backend.postman_collection.json \
+            -d login_full_test.csv \
             -r cli,htmlextra \
             --reporter-htmlextra-export reports/report.html
 
