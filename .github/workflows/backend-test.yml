@@ -5,11 +5,11 @@ on:
     paths:
       - "backend/**"
       - "postman/**"
-      - ".github/workflows/backend-test.yml"
+      - ".github/workflows/**"
   pull_request:
 
 jobs:
-  # --- JOB 1: TEST (Vẫn chạy trên Cloud Github cho nhanh) ---
+  # --- JOB 1: TEST (Chạy trên Cloud Github) ---
   backend-tests:
     runs-on: ubuntu-latest
     steps:
@@ -56,39 +56,60 @@ jobs:
           name: backend-log
           path: backend/server.log
 
-  # --- JOB 2: DEPLOY (Chạy trực tiếp trên Server của bạn) ---
+  # --- JOB 2: DEPLOY (Chạy trên EC2 - CÓ DUYỆT THỦ CÔNG) ---
   deploy:
     needs: backend-tests
     if: github.ref == 'refs/heads/main'
-    
-    # QUAN TRỌNG: Chuyển sang dùng Runner "của nhà trồng được"
-    runs-on: self-hosted
-    
+    runs-on: self-hosted # Runner chạy trên EC2 của bạn
+
+    # === CẤU HÌNH DELIVERY (CHỜ DUYỆT) ===
+    environment: 
+      name: Production
+      url: http://13.212.186.166:3000  # <--- Thay IP Public EC2 của bạn vào đây
+    # ======================================
+
     steps:
-      # Bước này Runner tự động tải code về thư mục làm việc của nó
       - name: Checkout Code Locally
         uses: actions/checkout@v4
 
-      - name: Build and Deploy v3
+      - name: Deploy to Docker
+        # Dùng biến môi trường để lấy mã Hash của commit làm Tag ảnh
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          CONTAINER_NAME: backend-container
         run: |
-          # Di chuyển vào thư mục backend (tương đối so với thư mục gốc repo)
+          echo "Bắt đầu deploy phiên bản: $IMAGE_TAG"
+          
+          # 1. Vào thư mục backend
           cd backend
-          
-          # Build Image v3 (Dùng sudo vì ec2-user cần quyền admin để gọi Docker)
-          sudo docker build -t backend-app:v4 .
 
-          # Cài psmisc nếu server chưa có (để dùng lệnh fuser)
-          sudo yum install psmisc -y || true
+          # 2. Build Image với tag động
+          docker build -t backend-app:$IMAGE_TAG .
 
-          # Kill process đang chiếm port 3000 (đảm bảo port sạch sẽ)
-          sudo fuser -k 3000/tcp || true 
+          # 3. Kiểm tra container cũ: Nếu đang chạy thì Stop & Xóa
+          if [ "$(docker ps -q -f name=$CONTAINER_NAME)" ]; then
+              echo "Container đang chạy -> Stop & Remove."
+              docker stop $CONTAINER_NAME
+              docker rm $CONTAINER_NAME
           
-          # Stop & Xóa container cũ
-          sudo docker stop backend-container || true
-          sudo docker rm backend-container || true
+          # Kiểm tra container cũ: Nếu đã Stop (exited) nhưng chưa xóa thì Xóa
+          elif [ "$(docker ps -aq -f status=exited -f name=$CONTAINER_NAME)" ]; then
+              echo "Container đã stop -> Remove."
+              docker rm $CONTAINER_NAME
+          fi
 
-          # Chạy container mới
-          sudo docker run -d -p 3000:3000 --name backend-container backend-app:v4
-          
-          # Dọn dẹp image rác
-          sudo docker image prune -f
+          # 4. Chạy Container mới
+          # --restart unless-stopped: Tự động chạy lại nếu EC2 bị khởi động lại
+          docker run -d \
+            -p 3000:3000 \
+            --name $CONTAINER_NAME \
+            --restart unless-stopped \
+            backend-app:$IMAGE_TAG
+
+          echo "Deploy thành công!"
+
+      - name: Cleanup Disk Space
+        if: always()
+        run: |
+          # Xóa các image rác (dangling) để không bị đầy ổ cứng EC2
+          docker image prune -f
