@@ -60,20 +60,20 @@ jobs:
           name: backend-log
           path: backend/server.log
 
-  # deploy:
-  #   needs: backend-tests
-  #   if: github.ref == 'refs/heads/main'
-  #   runs-on: self-hosted
-  #   environment: 
-  #     name: Production
-  #     url: http://13.212.186.166:3000
+  deploy:
+    needs: backend-tests
+    if: github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    environment: 
+      name: Production
+      url: http://13.212.97.203:3000
 
-  #   steps:
-  #     - name: Checkout Code
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-  #     - name: Execute Server Script
-  #       # GỌI FILE SCRIPT TRÊN SERVER VÀ TRUYỀN THAM SỐ
-  #       # github.workspace: Là đường dẫn thư mục code mà Runner vừa tải về
-  #       run: |
-  #         ~/my-deploy-script.sh "${{ github.sha }}" "${{ github.workspace }}"
+      - name: Execute Server Script
+        # GỌI FILE SCRIPT TRÊN SERVER VÀ TRUYỀN THAM SỐ
+        # github.workspace: Là đường dẫn thư mục code mà Runner vừa tải về
+        run: |
+          ~/my-deploy-script.sh "${{ github.sha }}" "${{ github.workspace }}"
