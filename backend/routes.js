@@ -59,7 +59,7 @@ router.post('/login', (req, res) => {
 
   // --- CASE 1: Happy path ---
   if (user === "datuan" && pass === "datuan") {
-    return res.status(200).json({
+    return res.status(201).json({
       data: {
         access_token: "mock_token_123"
       }
